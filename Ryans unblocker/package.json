@@ -1,0 +1,21 @@
+{
+  "name": "rpwner-proxy",
+  "version": "1.0.0",
+  "description": "rpwner - Fast & Secure Web Proxy with Scramjet",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p scram baremux/transport && cp node_modules/@mercuryworkshop/scramjet/dist/* scram/ && cp node_modules/@mercuryworkshop/bare-mux/dist/baremux.bundle.js baremux/ && cp node_modules/@mercuryworkshop/bare-mux/dist/transport/fetch.js baremux/transport/",
+    "vercel-build": "npm run build"
+  },
+  "dependencies": {
+    "@mercuryworkshop/scramjet": "^1.0.2",
+    "@mercuryworkshop/bare-mux": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["proxy", "web-proxy", "scramjet", "rpwner", "vercel"],
+  "author": "rpwner",
+  "license": "MIT"
+}
