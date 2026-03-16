@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>rpwner - Web Proxy</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .url-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        .url-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .url-input:focus {
+            border-color: #667eea;
+        }
+        
+        .go-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .go-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .feature {
+            padding: 1rem;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">rpwner</div>
+        <div class="subtitle">Fast & Secure Web Proxy</div>
+        
+        <form class="url-form" onsubmit="navigate(event)">
+            <input 
+                type="text" 
+                class="url-input" 
+                placeholder="Enter URL (e.g., google.com)" 
+                id="urlInput"
+                required
+            >
+            <button type="submit" class="go-btn">Go</button>
+        </form>
+        
+        <div class="features">
+            <div class="feature">🔒 Secure</div>
+            <div class="feature">⚡ Fast</div>
+            <div class="feature">🌐 Universal</div>
+            <div class="feature">🔧 Reliable</div>
+        </div>
+    </div>
+
+    <script src="/scram/scramjet.all.js"></script>
+    <script src="/baremux/baremux.bundle.js"></script>
+    <script>
+        // Initialize Scramjet and BareMux
+        let scramjetController;
+        let connection;
+
+        async function initProxy() {
+            try {
+                // Initialize BareMux connection
+                connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+                
+                // Set transport (using fetch transport for Vercel compatibility)
+                await connection.setTransport("/baremux/transport/fetch.js", []);
+                
+                // Initialize Scramjet Controller
+                const { ScramjetController } = $scramjetLoadController();
+                
+                scramjetController = new ScramjetController({
+                    files: {
+                        wasm: "/scram/scramjet.wasm.wasm",
+                        all: "/scram/scramjet.all.js",
+                        sync: "/scram/scramjet.sync.js",
+                    }
+                });
+
+                await scramjetController.init();
+                
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    await navigator.serviceWorker.register('/sw.js');
+                }
+                
+                console.log('rpwner proxy with Scramjet ready');
+            } catch (error) {
+                console.error('Failed to initialize proxy:', error);
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initProxy);
+
+        async function navigate(event) {
+            event.preventDefault();
+            
+            const input = document.getElementById('urlInput');
+            let url = input.value.trim();
+            
+            if (!url) return;
+            
+            // Add protocol if missing
+            if (!url.includes('://')) {
+                url = 'https://' + url;
+            }
+            
+            // Validate URL
+            try {
+                new URL(url);
+            } catch {
+                alert('Please enter a valid URL');
+                return;
+            }
+            
+            console.log('Navigating to:', url);
+            
+            // Use Scramjet to navigate
+            if (scramjetController) {
+                const proxiedUrl = scramjetController.encodeUrl(url);
+                window.location.href = proxiedUrl;
+            } else {
+                // Fallback to direct proxy if Scramjet not ready
+                const encodedUrl = btoa(url);
+                window.location.href = '/rpwner/' + encodedUrl;
+            }
+        }
+        
+        // Handle Enter key
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlInput = document.getElementById('urlInput');
+            if (urlInput) {
+                urlInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        navigate(e);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
